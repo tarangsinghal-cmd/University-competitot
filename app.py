@@ -1,16 +1,16 @@
 import streamlit as st
-from openai import OpenAI
+import google.generativeai as genai
 
 # 1. Setup Page Config
 st.set_page_config(page_title="University Competitor Finder", page_icon="🎓")
 
-st.title("🎓 University Competitor Analyst")
+st.title("🎓 University Competitor Analyst (Gemini Edition)")
 st.markdown("Enter a university to identify 10 competitor schools based on rankings, tuition, and proximity.")
 
-# 2. Sidebar for API Key (Keep it secure)
+# 2. Sidebar for API Key
 with st.sidebar:
-    openai_api_key = st.text_input("OpenAI API Key", type="password")
-    st.info("Get your key at platform.openai.com")
+    gemini_api_key = st.text_input("Gemini API Key", type="password")
+    st.info("Get your free key at [aistudio.google.com](https://aistudio.google.com/)")
 
 # 3. User Inputs
 col1, col2 = st.columns(2)
@@ -21,13 +21,17 @@ with col2:
 
 # 4. Generate Button
 if st.button("Generate Competitor List"):
-    if not openai_api_key:
-        st.error("Please add your OpenAI API key in the sidebar.")
+    if not gemini_api_key:
+        st.error("Please add your Gemini API key in the sidebar.")
     elif not uni_name:
         st.warning("Please enter a university name.")
     else:
         try:
-            client = OpenAI(api_key=openai_api_key)
+            # Configure Gemini
+            genai.configure(api_key=gemini_api_key)
+            
+            # Initialize the model (Gemini 1.5 Flash is fast and efficient)
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             # The exact prompt requested
             analyst_prompt = f"""
@@ -47,15 +51,12 @@ if st.button("Generate Competitor List"):
             Format the output as a clean Markdown table.
             """
 
-            with st.spinner(f"Analyzing markets for {uni_name}..."):
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "user", "content": analyst_prompt}]
-                )
+            with st.spinner(f"Gemini is analyzing markets for {uni_name}..."):
+                # Call Gemini API
+                response = model.generate_content(analyst_prompt)
                 
-                result = response.choices[0].message.content
                 st.subheader(f"Competitor Analysis for {uni_name}")
-                st.markdown(result)
+                st.markdown(response.text)
                 
         except Exception as e:
             st.error(f"An error occurred: {e}")
